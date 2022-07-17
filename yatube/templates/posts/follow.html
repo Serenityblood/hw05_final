@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% load cache %}  
+{% block title %}
+  Ваши подписки
+{% endblock %} 
+{% block content %}
+  <div class="container py-5">     
+    <h1>Публикации ваших авторов</h1>
+      {% include 'posts/includes/switcher.html' %}
+      {% for post in page_obj %}
+        {% include 'posts/includes/post_card.html' %}
+      {% endfor %}
+  {% include 'posts/includes/paginator.html' %}
+  </div>
+{% endblock %}
