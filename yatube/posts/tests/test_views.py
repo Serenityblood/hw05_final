@@ -71,6 +71,7 @@ class PostPagesTest(TestCase):
             context_data.author: self.user,
             context_data.image: self.post.image
         }
+        self.assertContains(response, '<img')
         for value, expected in value_exp.items():
             with self.subTest(value=value):
                 self.assertEqual(value, expected)
@@ -171,29 +172,35 @@ class PostPagesTest(TestCase):
         content_before = response.content
         new_post.delete()
         response_2 = self.authorized_client.get(reverse('post:main_page'))
-        content_after = response_2.content
-        self.assertEqual(content_before, content_after)
+        content_after_delete = response_2.content
+        self.assertEqual(content_before, content_after_delete)
+        cache.clear()
+        response_3 = self.authorized_client.get(reverse('posts:main_page'))
+        content_after_clear = response_3.content
+        self.assertNotEqual(content_before, content_after_clear)
 
-    def test_auth_user_can_follow_or_unfollow(self):
+    def test_auth_user_can_follow(self):
         """Работают ли подписки"""
-        user1 = User.objects.create(username='test1')
-        just_client = Client()
-        just_client.force_login(user1)
+        user1 = User.objects.create_user(username='test1')
         follow_count = Follow.objects.count()
         self.authorized_client.get(
             reverse('posts:profile_follow', args=(user1.username,))
         )
         self.assertEqual(Follow.objects.count(), follow_count + 1)
-        self.assertEqual(Follow.objects.get(
-            user=self.user, author=user1
-        ).user, self.user)
-        self.assertEqual(Follow.objects.get(
-            user=self.user, author=user1
-        ).author, user1)
-        self.authorized_client.get(
-            reverse('posts:profile_unfollow', args=(user1.username,))
+        self.assertEqual(Follow.objects.first().user, self.user)
+        self.assertEqual(Follow.objects.first().author, user1)
+
+    def test_auth_user_can_unfollow(self):
+        user2 = User.objects.create_user(username='test2')
+        Follow.objects.create(
+            user=self.user,
+            author=user2
         )
-        self.assertEqual(Follow.objects.count(), follow_count)
+        follow_count = Follow.objects.count()
+        self.authorized_client.get(
+            reverse('posts:profile_unfollow', args=(user2.username,))
+        )
+        self.assertEqual(Follow.objects.count(), follow_count - 1)
 
     def test_new_post_appears_on_right_user(self):
         """Новый пост на нужной странице"""
@@ -234,14 +241,19 @@ class PaginatorViewsTest(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='tester')
+        cls.user2 = User.objects.create_user(username='tester2')
         cls.group = Group.objects.create(
             title='Test title',
             slug='test',
             description='Test description'
         )
+        Follow.objects.create(
+            user=cls.user,
+            author=cls.user2
+        )
         for post_number in range(settings.POSTS_NUMBER):
             Post.objects.create(
-                author=cls.user,
+                author=cls.user2,
                 text=(f'Test title {post_number}'),
                 group=cls.group,
             )
@@ -255,7 +267,8 @@ class PaginatorViewsTest(TestCase):
         names_args = (
             ('posts:main_page', None),
             ('posts:group_posts_page', (self.group.slug,)),
-            ('posts:profile', (self.user.username,))
+            ('posts:profile', (self.user2.username,)),
+            ('posts:follow_index', None)
         )
         pages_posts = (
             ('?page=1', settings.PAGE_NUMBER),

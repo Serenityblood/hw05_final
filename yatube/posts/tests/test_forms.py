@@ -136,9 +136,7 @@ class CreatinoFormTest(TestCase):
         self.assertEqual(Post.objects.count(), post_count)
 
     def test_only_auth_user_can_comment(self):
-        comments_count = Comment.objects.select_related(
-            'post'
-        ).filter(post=self.post).count()
+        comments_count = Comment.objects.count()
         form_data = {
             'text': 'Test comment'
         }
@@ -147,16 +145,10 @@ class CreatinoFormTest(TestCase):
             data=form_data,
             follow=True
         )
-        self.assertEqual(
-            Comment.objects.select_related('post').filter(
-                post=self.post
-            ).count(), comments_count
-        )
+        self.assertEqual(Comment.objects.count(), comments_count)
 
     def test_valid_form_creates_comment(self):
-        comments_count = Comment.objects.select_related(
-            'post'
-        ).filter(post=self.post).count()
+        comments_count = Comment.objects.count()
         form_data = {
             'text': 'Test comment'
         }
@@ -165,9 +157,10 @@ class CreatinoFormTest(TestCase):
             data=form_data,
             follow=True
         )
+        comment = Comment.objects.first()
         self.assertEqual(
-            Comment.objects.select_related('post').filter(
-                post=self.post
-            ).count(), comments_count + 1
+            Comment.objects.count(), comments_count + 1
         )
-        self.assertEqual(self.post.comments.get(pk=1).text, form_data['text'])
+        self.assertEqual(comment.post, self.post)
+        self.assertEqual(comment.author, self.another_user)
+        self.assertEqual(comment.text, form_data['text'])

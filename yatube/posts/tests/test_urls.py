@@ -24,6 +24,7 @@ class PostsURLTests(TestCase):
         super().setUpClass()
         cls.user = User.objects.create_user(username='tester')
         cls.user2 = User.objects.create_user(username='tester2')
+        cls.user3 = User.objects.create_user(username='tester3')
         cls.group = Group.objects.create(
             title='Test title',
             slug='test',
@@ -48,7 +49,10 @@ class PostsURLTests(TestCase):
             ('posts:post_detail', (self.post.pk,)),
             ('posts:post_edit', (self.post.pk,)),
             ('posts:post_create', None),
-            ('posts:add_comment', (self.post.pk,))
+            ('posts:add_comment', (self.post.pk,)),
+            ('posts:follow_index', None),
+            ('posts:profile_follow', (self.user3.username,)),
+            ('posts:profile_unfollow', (self.user3.username,))
         )
 
     def test_hardcore_urls_names_match(self):
@@ -78,6 +82,22 @@ class PostsURLTests(TestCase):
                 'post:post_create',
                 None,
                 '/create/'
+            ), (
+                'posts:follow_index',
+                None,
+                '/follow/'
+            ), (
+                'posts:profile_follow',
+                (self.user3.username,),
+                f'/profile/{self.user3.username}/follow/'
+            ), (
+                'posts:profile_unfollow',
+                (self.user3.username,),
+                f'/profile/{self.user3.username}/unfollow/'
+            ), (
+                'posts:add_comment',
+                (self.post.pk,),
+                f'/posts/{self.post.pk}/comment/'
             )
         )
         for name, arg, url in name_args_urls:
@@ -90,7 +110,9 @@ class PostsURLTests(TestCase):
             with self.subTest(name=name):
                 response = self.client.get(reverse(name, args=arg))
                 if name in (
-                    'posts:post_edit', 'posts:post_create', 'posts:add_comment'
+                    'posts:post_edit', 'posts:post_create',
+                    'posts:add_comment', 'posts:follow_index',
+                    'posts:profile_follow', 'posts:profile_unfollow'
                 ):
                     login = reverse('users:login')
                     url_name = reverse(name, args=arg)
@@ -114,6 +136,14 @@ class PostsURLTests(TestCase):
                             'posts:post_detail', args=arg
                         )
                     )
+                elif name in (
+                    'posts:profile_follow', 'posts:profile_unfollow'
+                ):
+                    self.assertRedirects(
+                        response, reverse(
+                            'posts:profile', args=arg
+                        )
+                    )
                 else:
                     self.assertEqual(response.status_code, HTTPStatus.OK)
 
@@ -131,6 +161,14 @@ class PostsURLTests(TestCase):
                     self.assertRedirects(
                         response, reverse(
                             'posts:post_detail', args=arg
+                        )
+                    )
+                elif name in (
+                    'posts:profile_follow', 'posts:profile_unfollow'
+                ):
+                    self.assertRedirects(
+                        response, reverse(
+                            'posts:profile', args=arg
                         )
                     )
                 else:
@@ -160,9 +198,13 @@ class PostsURLTests(TestCase):
                 (self.post.pk,),
                 'posts/create_post.html'
             ), (
-                'post:post_create',
+                'posts:post_create',
                 None,
                 'posts/create_post.html'
+            ), (
+                'posts:follow_index',
+                None,
+                'posts/follow.html'
             )
         )
         for name, arg, template in names_templates:

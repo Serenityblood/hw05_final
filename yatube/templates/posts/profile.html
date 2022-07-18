@@ -4,6 +4,7 @@
     <div class="container py-5">        
       <h1>Все посты пользователя {{ author.get_full_name }} </h1>
       <h3>Всего постов: {{ page_obj.paginator.count }} </h3>
+      <h5> Подписок: {{ author.follower.count }} | Подписчиков: {{ author.following.count }} </h5>
       {% include 'posts/includes/following_button.html' %}
       {% for post in page_obj %}
         {% include 'posts/includes/post_card.html' %}

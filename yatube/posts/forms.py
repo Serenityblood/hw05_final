@@ -8,7 +8,7 @@ class PostForm(forms.ModelForm):
         model = Post
         fields = ('text', 'group', 'image')
         labels = {'text': 'Текст сюда', 'group': 'Любую или никакую группу'}
-        help_text = {'text': 'Всё что угодно', 'group': 'Из предложеных :)'}
+        help_texts = {'text': 'Всё что угодно', 'group': 'Из предложеных :)'}
 
 
 class CommentForm(forms.ModelForm):
@@ -16,4 +16,4 @@ class CommentForm(forms.ModelForm):
         model = Comment
         fields = ('text',)
         labels = {'text': 'Сюда текст'}
-        help_text = {'text': 'Что думаешь'}
+        help_texts = {'text': 'Что думаешь'}
