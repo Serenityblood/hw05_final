@@ -152,16 +152,10 @@ class PostsURLTests(TestCase):
         for name, arg in self.names_args:
             with self.subTest(name=name):
                 response = self.just_client.get(reverse(name, args=arg))
-                if name == 'posts:post_edit':
+                if name in ('posts:post_edit', 'posts:add_comment'):
                     self.assertRedirects(response, reverse(
                         'posts:post_detail', args=arg
                     )
-                    )
-                elif name == 'posts:add_comment':
-                    self.assertRedirects(
-                        response, reverse(
-                            'posts:post_detail', args=arg
-                        )
                     )
                 elif name in (
                     'posts:profile_follow', 'posts:profile_unfollow'

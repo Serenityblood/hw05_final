@@ -30,13 +30,11 @@ def profile(request, username):
     author = get_object_or_404(User, username=username)
     author_posts = author.posts.select_related('group')
     page_obj = paginator_func(request, author_posts)
-    following = False
-    if request.user.is_authenticated and Follow.objects.filter(
+    following = request.user.is_authenticated and Follow.objects.filter(
         user=request.user
     ).filter(
         author=author
-    ).exists():
-        following = True
+    ).exists()
     context = {
         'author': author,
         'page_obj': page_obj,
@@ -47,7 +45,7 @@ def profile(request, username):
 
 def post_detail(request, post_id):
     post = Post.objects.select_related('author').prefetch_related(
-        'comments', 'author'
+        'comments__author'
     ).get(pk=post_id)
     comments = post.comments.all()
     form = CommentForm()
@@ -117,7 +115,7 @@ def profile_follow(request, username):
     if user != author:
         Follow.objects.get_or_create(
             user=request.user,
-            author=User.objects.get(username=username)
+            author=author
         )
     return redirect('posts:profile', username=username)
 
